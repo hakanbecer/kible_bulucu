@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1b6b43" />
+  <title>Kıble Bulucu — Kâbe'ye Yön ve Mesafe</title>
+  <meta name="description" content="Haritada bir konuma tıklayarak Kâbe'ye doğru Kıble yönü, açı ve mesafeyi hesaplayın. Leaflet.js ile açık harita, dijital pusula, Kâbe marker'ı." />
+  <meta name="keywords" content="kıble, kabe, yön, pusula, harita, mesafe, haversine" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231b6b43'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle' fill='%23d4af37'%3E%E2%98%AA%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-icon">🕌</span>
+        <div>
+          <h1>Kıble Bulucu</h1>
+          <p class="subtitle">Kâbe'ye doğru yön, açı ve mesafe</p>
+        </div>
+      </div>
+      <button id="themeToggle" class="icon-btn" aria-label="Tema değiştir" title="Tema değiştir">🌙</button>
+    </header>
+
+    <main class="content">
+      <section class="map-wrap">
+        <div id="map" aria-label="Konum haritası"></div>
+      </section>
+
+      <aside class="panel" aria-live="polite">
+        <div class="compass-card">
+          <div class="compass" id="compass">
+            <div class="compass-ring">
+              <span class="compass-n">K</span>
+              <span class="compass-s">G</span>
+              <span class="compass-e">D</span>
+              <span class="compass-w">B</span>
+            </div>
+            <div class="compass-needle" id="compassNeedle">
+              <span class="needle-tip"></span>
+              <span class="needle-hub"></span>
+            </div>
+          </div>
+          <div class="compass-readout">
+            <span class="bearing-deg" id="bearingDeg">—</span>
+            <span class="bearing-dir" id="bearingDir">Henüz yok</span>
+          </div>
+        </div>
+
+        <div class="address-search">
+          <div class="search-box">
+            <input type="text" id="addressInput" placeholder="📍 Şehir adı veya adres girin (ör. İstanbul, Ankara)" autocomplete="off" />
+            <button id="searchBtn" class="btn primary">🔍 Bul</button>
+          </div>
+        </div>
+
+        <div class="info-cards">
+          <div class="card">
+            <span class="card-label">Seçilen Konum</span>
+            <span class="card-value" id="coordText">Haritaya tıklayın</span>
+          </div>
+          <div class="card">
+            <span class="card-label">Kıble Açısı (0° = Kuzey)</span>
+            <span class="card-value" id="angleText">—</span>
+          </div>
+          <div class="card">
+            <span class="card-label">Mesafe (Kâbe'ye)</span>
+            <span class="card-value" id="distanceText">—</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="locBtn" class="btn primary">📍 Konumumu Kullan</button>
+          <button id="resetBtn" class="btn ghost">🔄 Sıfırla</button>
+        </div>
+
+        <div class="device-compass" id="deviceCompass" hidden>
+          <span class="dot"></span>
+          <div>
+            <strong>Cihaz pusulası</strong>
+            <span id="deviceHeading">—</span>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,412 @@
+/* ============================================================
+   Kıble Bulucu — style.css
+   Tema: İslami yeşil-altın beyaz
+   Dark / Light mode desteği
+   Mobile-first responsive
+   ============================================================ */
+
+/* ---------- CSS değişkenleri (tema) ---------- */
+:root {
+  --bg:          #f5f5f0;
+  --bg-card:     #ffffff;
+  --bg-topbar:   #1b6b43;
+  --fg:          #1a1a1a;
+  --fg-muted:    #6b7280;
+  --accent:      #1b6b43;       /* İslami yeşil */
+  --accent-light:#e8f5ee;
+  --gold:        #d4af37;
+  --gold-light:  #f7e8a8;
+  --border:      #e5e7eb;
+  --shadow:      0 4px 24px rgba(0,0,0,.08);
+  --shadow-lg:   0 8px 40px rgba(0,0,0,.12);
+  --radius:      16px;
+  --danger:      #dc2626;
+  --info:        #2563eb;
+  --needle:      #c0392b;
+  --compass-bg:  #0f172a;
+  --toast-bg:    #1b6b43;
+}
+
+[data-theme="dark"] {
+  --bg:          #0b1120;
+  --bg-card:     #111827;
+  --bg-topbar:   #064e3b;
+  --fg:          #e5e7eb;
+  --fg-muted:    #9ca3af;
+  --accent:      #34d399;
+  --accent-light:#064e3b;
+  --gold:        #fbbf24;
+  --gold-light:  #78350f;
+  --border:      #1f2937;
+  --shadow:      0 4px 24px rgba(0,0,0,.4);
+  --shadow-lg:   0 8px 40px rgba(0,0,0,.5);
+  --compass-bg:  #1e293b;
+}
+
+/* ---------- Reset ---------- */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  min-height: 100vh;
+  transition: background .35s, color .35s;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- App container ---------- */
+.app {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---------- Header ---------- */
+.topbar {
+  background: var(--bg-topbar);
+  color: #fff;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+.topbar h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: .3px;
+}
+.subtitle {
+  font-size: .75rem;
+  opacity: .85;
+  margin-top: 2px;
+}
+.icon-btn {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.25);
+  color: #fff;
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background .2s;
+}
+.icon-btn:hover { background: rgba(255,255,255,.28); }
+
+/* ---------- Main layout ---------- */
+.content {
+  display: flex;
+  flex: 1;
+  gap: 0;
+  flex-direction: column;
+}
+
+/* ---------- Map ---------- */
+.map-wrap {
+  flex: 1 1 60%;
+  min-height: 380px;
+  position: relative;
+}
+#map {
+  width: 100%;
+  height: 100%;
+  min-height: 380px;
+  background: #e5e7eb;
+}
+
+/* ---------- Panel ---------- */
+.panel {
+  flex: 0 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---------- Compass card ---------- */
+.compass-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border);
+  transition: background .35s, border-color .35s;
+}
+
+.compass {
+  position: relative;
+  width: 150px; height: 150px;
+  border-radius: 50%;
+  background: var(--compass-bg);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,.4), 0 0 0 4px var(--gold), 0 0 0 6px var(--border);
+}
+.compass-ring {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+.compass-ring span {
+  position: absolute;
+  font-size: .85rem;
+}
+.compass-n { top: 8px; }
+.compass-s { bottom: 8px; }
+.compass-e { right: 10px; }
+.compass-w { left: 10px; }
+
+.compass-needle {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform-origin: 50% 50%;
+  transition: transform .8s cubic-bezier(.34,1.56,.64,1);
+  z-index: 2;
+  width: 0; height: 0;
+}
+.needle-tip {
+  display: block;
+  width: 0; height: 0;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 65px solid var(--needle);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.3));
+}
+.needle-hub {
+  position: absolute;
+  top: -6px; left: 50%;
+  transform: translateX(-50%);
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.3);
+}
+
+/* Compass readout */
+.compass-readout {
+  text-align: center;
+}
+.bearing-deg {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -.5px;
+}
+.bearing-dir {
+  display: block;
+  font-size: 1rem;
+  color: var(--fg-muted);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* ---------- Info cards ---------- */
+.info-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: background .35s, border-color .35s;
+}
+.card-label {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--fg-muted);
+  font-weight: 600;
+}
+.card-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--fg);
+  word-break: break-all;
+}
+.card-value.highlight {
+  color: var(--accent);
+  font-size: 1.15rem;
+}
+
+/* ---------- Buttons ---------- */
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  font-size: .95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .2s, opacity .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn:active { transform: scale(.97); }
+.btn.primary {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(27,107,67,.35);
+}
+.btn.primary:hover { opacity: .92; }
+.btn.ghost {
+  background: transparent;
+  color: var(--fg);
+  border: 1.5px solid var(--border);
+}
+.btn.ghost:hover { background: var(--accent-light); }
+
+/* ---------- Device compass ---------- */
+.device-compass {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--accent-light);
+  border-radius: 12px;
+  font-size: .85rem;
+  border: 1px solid var(--border);
+  transition: background .35s;
+}
+.device-compass .dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulse 1.6s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .3; }
+}
+.device-compass strong { display: block; font-size: .8rem; color: var(--fg-muted); }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--toast-bg);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: .9rem;
+  box-shadow: var(--shadow-lg);
+  z-index: 9999;
+  opacity: 0;
+  transition: transform .4s cubic-bezier(.22,1,.36,1), opacity .4s;
+  pointer-events: none;
+}
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* ---------- Kaaba marker custom ---------- */
+.kaaba-marker {
+  background: var(--gold);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.user-marker {
+  background: var(--info);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
+  width: 24px; height: 24px;
+}
+
+/* ---------- Arrow polyline (canvas) ---------- */
+.qibla-arrow-line {
+  stroke: var(--gold);
+  stroke-width: 4;
+  stroke-linecap: round;
+  opacity: .85;
+}
+
+/* ---------- Responsive ---------- */
+@media (min-width: 900px) {
+  .content {
+    flex-direction: row;
+  }
+  .map-wrap {
+    flex: 1 1 60%;
+    min-height: 70vh;
+  }
+  .panel {
+    flex: 0 0 360px;
+    padding: 20px;
+    overflow-y: auto;
+    border-left: 1px solid var(--border);
+  }
+}
+
+@media (max-width: 899px) {
+  .topbar h1 { font-size: 1.05rem; }
+  .subtitle { font-size: .65rem; }
+  .compass { width: 120px; height: 120px; }
+  .needle-tip {
+    border-left-width: 7px; border-right-width: 7px;
+    border-bottom-width: 50px;
+  }
+  .info-cards { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---------- Leaflet override ---------- */
+.leaflet-container { border-radius: 0 0 var(--radius) var(--radius); }
+@media (min-width: 900px) {
+  .leaflet-container { border-radius: var(--radius); }
+}
+/* Leaflet SVG polyline renk override — CSS değişkeni SVG'de çalışmaz → inline kullanılıyor */
+.qibla-arrow-line path {
+  stroke: #d4af37 !important;
+}
+.qibla-arrow-line line {
+  stroke: #d4af37 !important;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
