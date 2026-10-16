@@ -15,30 +15,28 @@
   const EARTH_RADIUS_METERS = 6371008.8; // WGS84 ortalama dünya yarıçapı
   const DEFAULT_COORDS = { lat: 41.0082, lng: 28.9784, name: 'İstanbul, Türkiye' };
 
-  // Harita Katman URL'leri (403 engeli olmayan, yüksek hızlı genel CDN katmanları)
+  // Harita Katman URL'leri (API Key gerektirmeyen, 403 engeli bulunmayan yüksek hızlı genel CDN katmanları)
   const TILE_LAYERS = {
     osm: {
-      url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
       options: {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
-      },
-      fallbackUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'
+        attribution: 'Harita &copy; Esri &mdash; Street Map',
+        maxZoom: 19
+      }
     },
     satellite: {
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       options: {
-        attribution: 'Tiles &copy; Esri &mdash; Maxar, Earthstar Geographics, GIS User Community',
+        attribution: 'Uydu &copy; Esri &mdash; High-Res Imagery',
         maxZoom: 19
       }
     },
     dark: {
-      url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
       options: {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
+        attribution: 'Karanlık &copy; Esri &mdash; Dark Canvas',
+        maxNativeZoom: 16,
+        maxZoom: 19
       }
     }
   };

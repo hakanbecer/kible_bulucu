@@ -3,7 +3,7 @@
    PWA Çevrimdışı Önbellekleme Desteği
    ============================================================ */
 
-const CACHE_NAME = 'kible-bulucu-v3';
+const CACHE_NAME = 'kible-bulucu-v5';
 const STATIC_ASSETS = [
   './',
   './index.html',
