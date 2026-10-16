@@ -1,0 +1,25 @@
+{
+  "name": "Kıble Bulucu — Kâbe Yönü & Pusula",
+  "short_name": "Kıble Bulucu",
+  "description": "Harita üzerinden hassas Kâbe yönü, kıble açısı, mesafe, dijital pusula ve namaz vakitleri.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b1120",
+  "theme_color": "#064e3b",
+  "orientation": "any",
+  "lang": "tr",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='36' fill='%23064e3b'/%3E%3Cpath d='M96 28 L146 56 L146 136 L96 164 L46 136 L46 56 Z' fill='%23111827' stroke='%23d4af37' stroke-width='4'/%3E%3Cpath d='M46 72 L146 72' stroke='%23d4af37' stroke-width='6' stroke-dasharray='8,4'/%3E%3Ccircle cx='96' cy='96' r='14' fill='%23d4af37'/%3E%3Cpolygon points='96,44 102,60 90,60' fill='%23ef4444'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%23064e3b'/%3E%3Cpath d='M256 75 L390 150 L390 362 L256 437 L122 362 L122 150 Z' fill='%23111827' stroke='%23d4af37' stroke-width='10'/%3E%3Cpath d='M122 190 L390 190' stroke='%23d4af37' stroke-width='16' stroke-dasharray='20,10'/%3E%3Ccircle cx='256' cy='256' r='36' fill='%23d4af37'/%3E%3Cpolygon points='256,120 272,160 240,160' fill='%23ef4444'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -2,94 +2,488 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#1b6b43" />
-  <title>Kıble Bulucu — Kâbe'ye Yön ve Mesafe</title>
-  <meta name="description" content="Haritada bir konuma tıklayarak Kâbe'ye doğru Kıble yönü, açı ve mesafeyi hesaplayın. Leaflet.js ile açık harita, dijital pusula, Kâbe marker'ı." />
-  <meta name="keywords" content="kıble, kabe, yön, pusula, harita, mesafe, haversine" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231b6b43'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle' fill='%23d4af37'%3E%E2%98%AA%3C/text%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#064e3b" />
+  <title>Kıble Bulucu — Hassas Kâbe Yönü, Mesafe ve Pusula</title>
+  <meta name="description" content="Haritada seçilen konumdan Kâbe'ye (Mekke) olan tam kıble açısı, mesafe, canlı dijital pusula, uydu haritası, günün kıble saati ve namaz vakitleri." />
+  <meta name="keywords" content="kıble bulucu, kabe yönü, kıble açısı, pusula, kabe mesafesi, mekke, namaz vakitleri, kıble saati, uydu harita" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Kıble Bulucu" />
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23064e3b'/%3E%3Cpath d='M50 18 L76 34 L76 76 L50 92 L24 76 L24 34 Z' fill='%23111827' stroke='%23d4af37' stroke-width='3'/%3E%3Cpath d='M24 44 L76 44' stroke='%23d4af37' stroke-width='4' stroke-dasharray='6,3'/%3E%3Ccircle cx='50' cy='55' r='8' fill='%23d4af37'/%3E%3Cpolygon points='50,26 58,38 42,38' fill='%23ef4444'/%3E%3C/svg%3E" />
+
+  <!-- Fonts & Leaflet CSS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app">
+    <!-- Header -->
     <header class="topbar">
       <div class="brand">
-        <span class="brand-icon">🕌</span>
+        <div class="brand-badge" aria-hidden="true">
+          <svg viewBox="0 0 40 40" width="32" height="32" class="brand-svg">
+            <rect width="40" height="40" rx="10" fill="#047857" />
+            <path d="M20 7 L32 14 L32 31 L20 38 L8 31 L8 14 Z" fill="#111827" stroke="#fbbf24" stroke-width="1.8"/>
+            <path d="M8 18 L32 18" stroke="#fbbf24" stroke-width="2.2" stroke-dasharray="3,1.5"/>
+            <circle cx="20" cy="24" r="3.5" fill="#fbbf24"/>
+            <polygon points="20,11 23,17 17,17" fill="#ef4444"/>
+          </svg>
+        </div>
         <div>
           <h1>Kıble Bulucu</h1>
-          <p class="subtitle">Kâbe'ye doğru yön, açı ve mesafe</p>
+          <p class="subtitle">Hassas Kâbe Yönü & Dijital Pusula</p>
         </div>
       </div>
-      <button id="themeToggle" class="icon-btn" aria-label="Tema değiştir" title="Tema değiştir">🌙</button>
+
+      <div class="topbar-actions">
+        <button id="soundToggle" class="icon-btn" aria-label="Ses efektini aç/kapat" title="Kıble Hiza Sesi (Açık/Kapalı)">
+          <span class="icon">🔔</span>
+        </button>
+        <button id="guideBtn" class="icon-btn" aria-label="Kıble Rehberi ve Yardım" title="Nasıl Kullanılır?">
+          <span class="icon">📖</span>
+        </button>
+        <button id="shareBtn" class="icon-btn" aria-label="Kıble Bilgilerini Paylaş" title="Paylaş veya Kopyala">
+          <span class="icon">📤</span>
+        </button>
+        <button id="themeToggle" class="icon-btn" aria-label="Tema değiştir" title="Tema Değiştir (Aydınlık / Karanlık)">
+          <span class="icon" id="themeIcon">🌙</span>
+        </button>
+      </div>
     </header>
 
+    <!-- Mobile Tab Bar (Visible on mobile/tablet) -->
+    <nav class="mobile-tabs" aria-label="Mobil Bölüm Geçişi">
+      <button class="tab-btn active" data-tab="compass-tab">
+        <span class="tab-icon">🧭</span>
+        <span>Pusula</span>
+      </button>
+      <button class="tab-btn" data-tab="map-tab">
+        <span class="tab-icon">🗺️</span>
+        <span>Harita</span>
+      </button>
+      <button class="tab-btn" data-tab="details-tab">
+        <span class="tab-icon">🕌</span>
+        <span>Vakitler & Bilgi</span>
+      </button>
+    </nav>
+
+    <!-- Main Content Area -->
     <main class="content">
-      <section class="map-wrap">
-        <div id="map" aria-label="Konum haritası"></div>
+      <!-- MAP SECTION -->
+      <section class="map-wrap" id="mapSection">
+        <div id="map" aria-label="İnteraktif Kıble Haritası"></div>
+
+        <!-- Floating Map Tool Buttons -->
+        <div class="map-floating-controls">
+          <div class="map-control-group">
+            <button id="mapLayerOsm" class="map-btn active" title="Standart Sokak Haritası">🗺️ Sokak</button>
+            <button id="mapLayerSatellite" class="map-btn" title="Yüksek Çözünürlüklü Uydu Haritası (Bina ve Çatı Tespiti)">🛰️ Uydu</button>
+            <button id="mapLayerDark" class="map-btn" title="Karanlık Harita">🌙 Gece</button>
+          </div>
+
+          <div class="map-control-group icons-only">
+            <button id="locateMeBtn" class="map-icon-btn" title="Mevcut GPS Konumumu Bul">📍</button>
+            <button id="fitBoundsBtn" class="map-icon-btn" title="Kâbe ile Konumumu Aynı Ekrana Sığdır">📐</button>
+            <button id="zoomUserBtn" class="map-icon-btn" title="Konumuma Sokak / Bina Düzeyinde Yaklaş">🔍</button>
+            <button id="flyKaabaBtn" class="map-icon-btn" title="Mekke-i Mükerreme'ye Git">🕋</button>
+            <button id="fullscreenBtn" class="map-icon-btn" title="Haritayı Tam Ekran Yap">⛶</button>
+          </div>
+        </div>
+
+        <!-- Map Bottom Location Badge -->
+        <div class="map-location-badge" id="mapLocationBadge">
+          <span class="badge-dot"></span>
+          <span class="badge-text" id="mapBadgeText">Haritaya tıklayarak veya arama ile nokta belirleyin</span>
+          <button class="badge-copy-btn" id="badgeCopyBtn" title="Koordinatları Kopyala">📋</button>
+        </div>
       </section>
 
-      <aside class="panel" aria-live="polite">
-        <div class="compass-card">
-          <div class="compass" id="compass">
-            <div class="compass-ring">
-              <span class="compass-n">K</span>
-              <span class="compass-s">G</span>
-              <span class="compass-e">D</span>
-              <span class="compass-w">B</span>
-            </div>
-            <div class="compass-needle" id="compassNeedle">
-              <span class="needle-tip"></span>
-              <span class="needle-hub"></span>
-            </div>
-          </div>
-          <div class="compass-readout">
-            <span class="bearing-deg" id="bearingDeg">—</span>
-            <span class="bearing-dir" id="bearingDir">Henüz yok</span>
-          </div>
-        </div>
-
-        <div class="address-search">
+      <!-- SIDE PANEL -->
+      <aside class="panel" id="panelSection">
+        <!-- Search Box with Live Autocomplete -->
+        <div class="search-section">
           <div class="search-box">
-            <input type="text" id="addressInput" placeholder="📍 Şehir adı veya adres girin (ör. İstanbul, Ankara)" autocomplete="off" />
-            <button id="searchBtn" class="btn primary">🔍 Bul</button>
+            <span class="search-icon">🔍</span>
+            <input 
+              type="text" 
+              id="addressInput" 
+              placeholder="Şehir, ilçe veya koordinat girin (ör. Kadıköy, Konya)" 
+              autocomplete="off" 
+              aria-label="Konum arama kutusu"
+            />
+            <button id="clearSearchBtn" class="clear-btn" title="Temizle" hidden>×</button>
+            <button id="searchBtn" class="btn primary search-submit-btn">Ara</button>
+          </div>
+          <!-- Autocomplete Dropdown -->
+          <div class="search-suggestions" id="searchSuggestions" hidden></div>
+
+          <!-- Quick City Chips -->
+          <div class="city-chips-wrap">
+            <div class="city-chips" id="cityChips" role="toolbar" aria-label="Popüler Şehirler">
+              <!-- Dynamically populated or static chips -->
+              <button class="chip" data-lat="41.0082" data-lng="28.9784">İstanbul</button>
+              <button class="chip" data-lat="39.9334" data-lng="32.8597">Ankara</button>
+              <button class="chip" data-lat="38.4237" data-lng="27.1428">İzmir</button>
+              <button class="chip" data-lat="40.1885" data-lng="29.0610">Bursa</button>
+              <button class="chip" data-lat="36.8969" data-lng="30.7133">Antalya</button>
+              <button class="chip" data-lat="37.8746" data-lng="32.4932">Konya</button>
+              <button class="chip" data-lat="41.0027" data-lng="39.7168">Trabzon</button>
+              <button class="chip" data-lat="37.0662" data-lng="37.3833">Gaziantep</button>
+              <button class="chip" data-lat="31.7683" data-lng="35.2137">Kudüs</button>
+              <button class="chip" data-lat="24.4672" data-lng="39.6111">Medine</button>
+              <button class="chip" data-lat="52.5200" data-lng="13.4050">Berlin</button>
+              <button class="chip" data-lat="51.5074" data-lng="-0.1278">Londra</button>
+              <button class="chip" data-lat="40.7128" data-lng="-74.0060">New York</button>
+            </div>
           </div>
         </div>
 
+        <!-- Compass Card -->
+        <div class="compass-card" id="compassCard">
+          <!-- Compass Mode Selector -->
+          <div class="compass-mode-toggle" role="radiogroup" aria-label="Pusula Çalışma Modu">
+            <button id="modeFixedBtn" class="mode-btn active" role="radio" aria-checked="true">
+              <span>🧭 Sabit Kadran (Harita)</span>
+            </button>
+            <button id="modeSensorBtn" class="mode-btn" role="radio" aria-checked="false">
+              <span>📱 Canlı Pusula (Sensör)</span>
+            </button>
+          </div>
+
+          <!-- Compass Dial Container -->
+          <div class="compass-container" id="compassContainer">
+            <!-- Alignment Glow Aura -->
+            <div class="compass-glow" id="compassGlow"></div>
+
+            <!-- SVG Compass Dial -->
+            <div class="compass-dial" id="compassDial">
+              <!-- Dial SVG is dynamically drawn / embedded for crisp high-res graphics -->
+              <svg id="compassSvg" viewBox="0 0 320 320" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <!-- Dial Outer Gradient -->
+                  <linearGradient id="bezelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#d4af37" />
+                    <stop offset="50%" stop-color="#fdf6b2" />
+                    <stop offset="100%" stop-color="#b45309" />
+                  </linearGradient>
+                  <!-- Dial Background Gradient -->
+                  <radialGradient id="dialBgGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#0f172a" />
+                    <stop offset="75%" stop-color="#020617" />
+                    <stop offset="100%" stop-color="#020617" />
+                  </radialGradient>
+                  <!-- Needle Red Gradient -->
+                  <linearGradient id="needleRed" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#ef4444" />
+                    <stop offset="50%" stop-color="#f87171" />
+                    <stop offset="100%" stop-color="#dc2626" />
+                  </linearGradient>
+                  <!-- Needle Silver Gradient -->
+                  <linearGradient id="needleSilver" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#64748b" />
+                    <stop offset="50%" stop-color="#94a3b8" />
+                    <stop offset="100%" stop-color="#475569" />
+                  </linearGradient>
+                  <!-- Glow Filter -->
+                  <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+
+                <!-- Bezel & Background -->
+                <circle cx="160" cy="160" r="154" fill="none" stroke="url(#bezelGrad)" stroke-width="4" opacity="0.9" />
+                <circle cx="160" cy="160" r="148" fill="url(#dialBgGrad)" stroke="#1e293b" stroke-width="2" />
+                <circle cx="160" cy="160" r="118" fill="none" stroke="#334155" stroke-width="1" stroke-dasharray="2,4" />
+                <circle cx="160" cy="160" r="88" fill="none" stroke="#1e293b" stroke-width="1" />
+
+                <!-- Dial ticks & degrees will be injected via JS for precision -->
+                <g id="dialTicksGroup"></g>
+
+                <!-- Cardinal Directions -->
+                <text x="160" y="38" text-anchor="middle" class="cardinal-text cardinal-n">K</text>
+                <text x="290" y="166" text-anchor="middle" class="cardinal-text">D</text>
+                <text x="160" y="294" text-anchor="middle" class="cardinal-text">G</text>
+                <text x="30" y="166" text-anchor="middle" class="cardinal-text">B</text>
+
+                <!-- Kaaba Emblem on Dial Perimeter -->
+                <g id="kaabaDialMarker" transform="rotate(0 160 160)">
+                  <line x1="160" y1="12" x2="160" y2="34" stroke="#fbbf24" stroke-width="3" stroke-linecap="round" filter="url(#goldGlow)"/>
+                  <rect x="150" y="2" width="20" height="20" rx="4" fill="#064e3b" stroke="#fbbf24" stroke-width="2" />
+                  <text x="160" y="17" text-anchor="middle" font-size="12" fill="#fbbf24">🕌</text>
+                </g>
+
+                <!-- Compass Needle Group (Rotated dynamically) -->
+                <g id="needleGroup" transform="rotate(0 160 160)">
+                  <!-- North (Red Tip) -->
+                  <polygon points="160,30 169,160 160,150" fill="url(#needleRed)" />
+                  <polygon points="160,30 151,160 160,150" fill="#dc2626" />
+                  <!-- North Luminous Dot -->
+                  <circle cx="160" cy="46" r="3" fill="#ffffff" filter="url(#goldGlow)" />
+
+                  <!-- South (Silver Tip) -->
+                  <polygon points="160,285 169,160 160,170" fill="url(#needleSilver)" />
+                  <polygon points="160,285 151,160 160,170" fill="#334155" />
+
+                  <!-- Center Pivot / Hub -->
+                  <circle cx="160" cy="160" r="14" fill="url(#bezelGrad)" stroke="#0f172a" stroke-width="2" />
+                  <circle cx="160" cy="160" r="7" fill="#047857" stroke="#ffffff" stroke-width="1.5" />
+                </g>
+              </svg>
+            </div>
+
+            <!-- Top Phone Alignment Sighter Line (For sensor mode) -->
+            <div class="phone-sighter" id="phoneSighter" title="Telefonunuzun üst kenarı bu çizgidir">
+              <span class="sighter-tip">▲</span>
+            </div>
+          </div>
+
+          <!-- Compass Readout -->
+          <div class="compass-readout">
+            <div class="bearing-badge-row">
+              <div class="bearing-number-wrap">
+                <span class="bearing-deg" id="bearingDeg">0°</span>
+                <span class="bearing-unit">açı</span>
+              </div>
+              <div class="bearing-meta">
+                <span class="bearing-dir" id="bearingDir">Kuzey</span>
+                <span class="bearing-sub" id="bearingPrecision">0.00° Hassasiyet</span>
+              </div>
+            </div>
+
+            <!-- Dynamic Guidance Banner -->
+            <div class="guidance-banner" id="guidanceBanner">
+              <span class="guidance-icon" id="guidanceIcon">🧭</span>
+              <span class="guidance-text" id="guidanceText">Kıble yönü hesaplandı</span>
+            </div>
+          </div>
+
+          <!-- Sensor Status & Calibrate -->
+          <div class="sensor-bar" id="sensorBar" hidden>
+            <div class="sensor-status">
+              <span class="status-pulse-dot" id="sensorDot"></span>
+              <span id="sensorStatusText">Cihaz sensörü dinleniyor…</span>
+            </div>
+            <button id="calibrateBtn" class="sensor-action-btn" title="Pusulayı Kalibre Etme Rehberi">
+              ⚙️ Kalibre Et
+            </button>
+          </div>
+        </div>
+
+        <!-- Primary Metric Info Cards -->
         <div class="info-cards">
-          <div class="card">
-            <span class="card-label">Seçilen Konum</span>
-            <span class="card-value" id="coordText">Haritaya tıklayın</span>
+          <div class="card metric-card">
+            <div class="card-header">
+              <span class="card-icon">🕋</span>
+              <span class="card-label">Kıble Açısı</span>
+            </div>
+            <div class="card-body">
+              <span class="card-value highlight" id="angleText">—</span>
+              <span class="card-hint">Kuzeyden saat yönünde</span>
+            </div>
           </div>
-          <div class="card">
-            <span class="card-label">Kıble Açısı (0° = Kuzey)</span>
-            <span class="card-value" id="angleText">—</span>
+
+          <div class="card metric-card">
+            <div class="card-header">
+              <span class="card-icon">📏</span>
+              <span class="card-label">Kâbe'ye Mesafe</span>
+            </div>
+            <div class="card-body">
+              <span class="card-value highlight" id="distanceText">—</span>
+              <span class="card-hint" id="distanceMiText">Kuş uçuşu</span>
+            </div>
           </div>
-          <div class="card">
-            <span class="card-label">Mesafe (Kâbe'ye)</span>
-            <span class="card-value" id="distanceText">—</span>
+
+          <div class="card metric-card">
+            <div class="card-header">
+              <span class="card-icon">☀️</span>
+              <span class="card-label">Günün Kıble Saati</span>
+            </div>
+            <div class="card-body">
+              <span class="card-value" id="qiblaHourText">—</span>
+              <span class="card-hint" id="qiblaHourHint">Güneşle hizalanma anı</span>
+            </div>
+          </div>
+
+          <div class="card metric-card">
+            <div class="card-header">
+              <span class="card-icon">🕋</span>
+              <span class="card-label">Mekke Yerel Saati</span>
+            </div>
+            <div class="card-body">
+              <span class="card-value" id="meccaTimeText">—</span>
+              <span class="card-hint">Suudi Arabistan (UTC+3)</span>
+            </div>
           </div>
         </div>
 
+        <!-- Extra Feature Section: Namaz Vakitleri & Güneş Pusulası -->
+        <div class="details-section" id="detailsSection">
+          <!-- Accordion 1: Günün Namaz Vakitleri -->
+          <div class="feature-accordion">
+            <div class="accordion-header" id="prayerTimesHeader">
+              <div class="accordion-title">
+                <span>🕌</span>
+                <span>Seçilen Noktada Namaz Vakitleri</span>
+              </div>
+              <span class="accordion-arrow">▾</span>
+            </div>
+            <div class="accordion-content" id="prayerTimesContent">
+              <div class="prayer-times-grid" id="prayerTimesGrid">
+                <div class="prayer-slot" id="pt-imsak"><span class="pt-name">İmsak</span><span class="pt-time" id="timeImsak">--:--</span></div>
+                <div class="prayer-slot" id="pt-gunes"><span class="pt-name">Güneş</span><span class="pt-time" id="timeGunes">--:--</span></div>
+                <div class="prayer-slot" id="pt-ogle"><span class="pt-name">Öğle</span><span class="pt-time" id="timeOgle">--:--</span></div>
+                <div class="prayer-slot" id="pt-ikindi"><span class="pt-name">İkindi</span><span class="pt-time" id="timeIkindi">--:--</span></div>
+                <div class="prayer-slot" id="pt-aksam"><span class="pt-name">Akşam</span><span class="pt-time" id="timeAksam">--:--</span></div>
+                <div class="prayer-slot" id="pt-yatsi"><span class="pt-name">Yatsı</span><span class="pt-time" id="timeYatsi">--:--</span></div>
+              </div>
+              <p class="prayer-note">* Seçilen enlem/boylam koordinatlarına göre astronomik olarak hesaplanmıştır.</p>
+            </div>
+          </div>
+
+          <!-- Accordion 2: Güneş ile Kıble Tayini -->
+          <div class="feature-accordion">
+            <div class="accordion-header" id="sunDetailsHeader">
+              <div class="accordion-title">
+                <span>☀️</span>
+                <span>Güneş ile Kıble Doğrulama (Pusulasız)</span>
+              </div>
+              <span class="accordion-arrow">▾</span>
+            </div>
+            <div class="accordion-content" id="sunDetailsContent">
+              <div class="sun-info-row">
+                <div class="sun-stat">
+                  <span class="sun-label">Güneş Açısı (Azimut)</span>
+                  <span class="sun-val" id="sunAzimuthText">—</span>
+                </div>
+                <div class="sun-stat">
+                  <span class="sun-label">Güneş Yüksekliği</span>
+                  <span class="sun-val" id="sunAltitudeText">—</span>
+                </div>
+              </div>
+              <div class="sun-relative-box" id="sunRelativeBox">
+                <span id="sunRelativeText">Güneş durumu yükleniyor…</span>
+              </div>
+              <p class="sun-note">💡 Ev içindeki metal veya elektronik eşyalar pusulayı saptırabilir. Gündüz vakti Güneş konumu veya haritadaki bina çatısı çizgisi en kesin neticedir.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
         <div class="actions">
-          <button id="locBtn" class="btn primary">📍 Konumumu Kullan</button>
-          <button id="resetBtn" class="btn ghost">🔄 Sıfırla</button>
-        </div>
-
-        <div class="device-compass" id="deviceCompass" hidden>
-          <span class="dot"></span>
-          <div>
-            <strong>Cihaz pusulası</strong>
-            <span id="deviceHeading">—</span>
-          </div>
+          <button id="locBtn" class="btn primary">
+            <span class="btn-icon">📍</span>
+            <span>Konumumu Kullan (GPS)</span>
+          </button>
+          <button id="panelShareBtn" class="btn ghost">
+            <span class="btn-icon">📤</span>
+            <span>Paylaş / Kopyala</span>
+          </button>
+          <button id="resetBtn" class="btn ghost">
+            <span class="btn-icon">🔄</span>
+            <span>Sıfırla</span>
+          </button>
         </div>
       </aside>
     </main>
 
+    <!-- Help & Guide Modal -->
+    <div class="modal-overlay" id="guideModal" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-row">
+            <span class="modal-icon">📖</span>
+            <h3>Kıble Tespit Rehberi & İpuçları</h3>
+          </div>
+          <button class="modal-close-btn" id="closeGuideBtn" aria-label="Kapat">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="guide-item">
+            <div class="guide-icon">🛰️</div>
+            <div>
+              <strong>1. En Kesin Yöntem: Uydu Haritasında Bina Çatısı</strong>
+              <p>Harita kontrollerinden <strong>"Uydu"</strong> katmanını açın ve evinizin çatısına kadar yakınlaşın. Kâbe'ye uzanan altın sarısı çizginin binanızın hangi penceresinden veya duvarından geçtiğini görerek odanızda milimetrik kıble belirleyin.</p>
+            </div>
+          </div>
+
+          <div class="guide-item">
+            <div class="guide-icon">📱</div>
+            <div>
+              <strong>2. Canlı Cihaz Pusulası Kullanımı</strong>
+              <p>Telefonunuzu düz tutarak <strong>"Canlı Pusula"</strong> moduna geçin. Telefonu çevirerek yeşil halka parlayıp <em>"Kıble Hizası"</em> bildirimini ve titreşimi alana kadar dönün.</p>
+            </div>
+          </div>
+
+          <div class="guide-item">
+            <div class="guide-icon">⚠️</div>
+            <div>
+              <strong>3. Manyetik Sapma ve Parazit Uyarısı</strong>
+              <p>Betonarme kolonlar, demir korkuluklar, bilgisayar ve şarj aletleri telefon pusulasını yanıltabilir. Pusulayı kullanırken açık alanda veya pencere kenarında olun.</p>
+            </div>
+          </div>
+
+          <div class="guide-item">
+            <div class="guide-icon">☀️</div>
+            <div>
+              <strong>4. Günün Kıble Saati ile Güneş Tayini</strong>
+              <p>Her gün belirtilen <strong>"Kıble Saati"</strong> anında Güneş'e dönen veya bir çubuğun gölgesinin tersi yönüne bakan kişi tam olarak Kâbe'ye yönelmiş olur.</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn primary" id="gotItBtn">Anladım</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calibration Modal -->
+    <div class="modal-overlay" id="calibrateModal" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-row">
+            <span class="modal-icon">⚙️</span>
+            <h3>Pusula Kalibrasyonu</h3>
+          </div>
+          <button class="modal-close-btn" id="closeCalibrateBtn" aria-label="Kapat">×</button>
+        </div>
+        <div class="modal-body text-center">
+          <div class="calibrate-animation">
+            <span class="infinity-symbol">∞</span>
+          </div>
+          <p>Telefonunuzun manyetik sensörünün doğru çalışması için cihazınızı elinizde tutarak havada <strong>8 (sonsuzluk) işareti</strong> çizer gibi 3-4 kez sallayın.</p>
+          <div class="calibrate-tip">
+            Cihaz kılıfınızda mıknatıs veya metal plaka varsa çıkarmanız tavsiye edilir.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn primary" id="doneCalibrateBtn">Tamam</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="app.js"></script>
+  <script>
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
+          console.warn('SW registration failed:', err);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
