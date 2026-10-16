@@ -15,11 +15,16 @@
   const EARTH_RADIUS_METERS = 6371008.8; // WGS84 ortalama dünya yarıçapı
   const DEFAULT_COORDS = { lat: 41.0082, lng: 28.9784, name: 'İstanbul, Türkiye' };
 
-  // Harita Katman URL'leri
+  // Harita Katman URL'leri (403 engeli olmayan, yüksek hızlı genel CDN katmanları)
   const TILE_LAYERS = {
     osm: {
-      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      options: { attribution: '&copy; OpenStreetMap contributors', maxZoom: 19 }
+      url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+      options: {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+      },
+      fallbackUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'
     },
     satellite: {
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -31,8 +36,9 @@
     dark: {
       url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       options: {
-        attribution: '&copy; OpenStreetMap &copy; CARTO',
-        maxZoom: 19
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
       }
     }
   };
@@ -453,6 +459,21 @@
 
     const layerConf = TILE_LAYERS[key];
     currentTileLayer = L.tileLayer(layerConf.url, layerConf.options).addTo(map);
+
+    // Herhangi bir tile yüklenemezse veya engellenirse yedek sunucudan otomatik yükle
+    if (layerConf.fallbackUrl) {
+      currentTileLayer.on('tileerror', function(error) {
+        if (error && error.tile && !error.tile._hasFallenBack) {
+          error.tile._hasFallenBack = true;
+          const coords = error.coords;
+          error.tile.src = layerConf.fallbackUrl
+            .replace('{z}', coords.z)
+            .replace('{y}', coords.y)
+            .replace('{x}', coords.x);
+        }
+      });
+    }
+
     state.currentLayerKey = key;
 
     // Buton aktiflik sınıflarını güncelle
@@ -992,7 +1013,7 @@
   }
 
   /* ============================================================
-     10. COĞRAFİ ARAMA VE TERS GEOCODING (NOMINATIM)
+     10. COĞRAFİ ARAMA VE TERS GEOCODING (PHOTON & NOMINATIM)
      ============================================================ */
   async function reverseGeocode(lat, lng) {
     if (reverseGeoAbortController) {
@@ -1000,13 +1021,44 @@
     }
     reverseGeoAbortController = new AbortController();
 
+    // 1. Önce Hızlı ve Engellenmeyen Photon Komoot API'yi dene
+    try {
+      const photonUrl = `https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&lang=tr`;
+      const res = await fetch(photonUrl, { signal: reverseGeoAbortController.signal });
+      if (res.ok) {
+        const data = await res.json();
+        const feat = data?.features?.[0];
+        if (feat && feat.properties) {
+          const p = feat.properties;
+          const parts = [
+            p.name,
+            p.district || p.city,
+            p.state || p.country
+          ].filter(Boolean);
+
+          const shortName = parts.filter((v, i, a) => a.indexOf(v) === i).slice(0, 3).join(', ');
+          if (shortName) {
+            state.currentAddress = shortName;
+            updateMapLocationBadge(lat, lng, shortName);
+            const input = document.getElementById('addressInput');
+            if (input && document.activeElement !== input) {
+              input.value = shortName;
+            }
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+    }
+
+    // 2. Yedek: Nominatim
     try {
       const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=tr`;
       const res = await fetch(url, { signal: reverseGeoAbortController.signal });
       if (!res.ok) return;
       const data = await res.json();
       if (data && data.display_name) {
-        // Kısa ad türet
         const addr = data.address || {};
         const parts = [
           addr.suburb || addr.neighbourhood || addr.quarter,
@@ -1050,6 +1102,32 @@
     }
 
     showToast('Konum aranıyor…', 'info');
+
+    // 1. Önce Photon API
+    try {
+      const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=tr`;
+      const res = await fetch(photonUrl);
+      if (res.ok) {
+        const data = await res.json();
+        const feat = data?.features?.[0];
+        if (feat && feat.geometry && feat.geometry.coordinates) {
+          const lng = parseFloat(feat.geometry.coordinates[0]);
+          const lat = parseFloat(feat.geometry.coordinates[1]);
+          const p = feat.properties || {};
+          const title = [p.name, p.district, p.city, p.country].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ');
+          state.currentAddress = title || query;
+
+          setLocation(lat, lng, true);
+          showToast(`Bulundu: ${state.currentAddress}`, 'success');
+          closeSuggestions();
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Photon arama yedek servise devrediliyor:', e);
+    }
+
+    // 2. Yedek: Nominatim API
     try {
       const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&accept-language=tr`;
       const res = await fetch(url);
@@ -1081,14 +1159,45 @@
       return;
     }
 
+    const container = document.getElementById('searchSuggestions');
+    if (!container) return;
+
+    // 1. Önce Photon ile önerileri al
+    try {
+      const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=tr`;
+      const res = await fetch(photonUrl);
+      if (res.ok) {
+        const data = await res.json();
+        const features = data?.features || [];
+        if (features.length > 0) {
+          container.innerHTML = features.map(feat => {
+            const lng = feat.geometry.coordinates[0];
+            const lat = feat.geometry.coordinates[1];
+            const p = feat.properties || {};
+            const title = [p.name, p.district, p.city, p.country].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(', ');
+            return `
+              <div class="suggestion-item" data-lat="${lat}" data-lng="${lng}" data-name="${encodeURIComponent(title)}">
+                <span class="suggestion-icon">📍</span>
+                <span>${title}</span>
+              </div>
+            `;
+          }).join('');
+
+          container.hidden = false;
+          bindSuggestionClicks(container);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Photon öneri hatası, Nominatim deneniyor:', e);
+    }
+
+    // 2. Yedek: Nominatim
     try {
       const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&accept-language=tr`;
       const res = await fetch(url);
       if (!res.ok) return;
       const list = await res.json();
-
-      const container = document.getElementById('searchSuggestions');
-      if (!container) return;
 
       if (!list || list.length === 0) {
         container.hidden = true;
@@ -1106,25 +1215,27 @@
       }).join('');
 
       container.hidden = false;
-
-      // Öneri tıklamalarını bağla
-      container.querySelectorAll('.suggestion-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const lat = parseFloat(item.getAttribute('data-lat'));
-          const lng = parseFloat(item.getAttribute('data-lng'));
-          const name = decodeURIComponent(item.getAttribute('data-name')).split(',').slice(0, 3).join(',');
-
-          state.currentAddress = name;
-          const input = document.getElementById('addressInput');
-          if (input) input.value = name;
-
-          setLocation(lat, lng, true);
-          closeSuggestions();
-        });
-      });
+      bindSuggestionClicks(container);
     } catch (e) {
       console.warn('Öneri hatası:', e);
     }
+  }
+
+  function bindSuggestionClicks(container) {
+    container.querySelectorAll('.suggestion-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const lat = parseFloat(item.getAttribute('data-lat'));
+        const lng = parseFloat(item.getAttribute('data-lng'));
+        const name = decodeURIComponent(item.getAttribute('data-name')).split(',').slice(0, 3).join(',');
+
+        state.currentAddress = name;
+        const input = document.getElementById('addressInput');
+        if (input) input.value = name;
+
+        setLocation(lat, lng, true);
+        closeSuggestions();
+      });
+    });
   }
 
   function closeSuggestions() {

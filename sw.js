@@ -3,7 +3,7 @@
    PWA Çevrimdışı Önbellekleme Desteği
    ============================================================ */
 
-const CACHE_NAME = 'kible-bulucu-v2';
+const CACHE_NAME = 'kible-bulucu-v3';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -37,16 +37,15 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Tile isteklerini ve dış API'leri (Nominatim vb.) önbellekleme dışı veya network-first yapalım
+  // Tile isteklerini ve dış API'leri önbellekleme dışı veya network-first yapalım
   const url = new URL(event.request.url);
 
-  if (url.origin.includes('tile.openstreetmap.org') || 
+  if (url.origin.includes('cartocdn.com') ||
       url.origin.includes('arcgisonline.com') ||
-      url.origin.includes('cartocdn.com') ||
+      url.origin.includes('photon.komoot.io') ||
       url.origin.includes('nominatim.openstreetmap.org')) {
     event.respondWith(
       fetch(event.request).catch(() => {
-        // Çevrimdışıysa ve harita tile'ı varsa önbellekten deneyebilir veya boş dönebilir
         return caches.match(event.request);
       })
     );
